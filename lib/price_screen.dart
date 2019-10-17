@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'coin_data.dart';
+import 'services/coin_data.dart';
 import 'dart:io'
     show Platform; // REQUIRED TO CHECK WHAT KIND OF SYSTEM USER IS USING
 
@@ -11,6 +11,66 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = 'USD';
+  String btcValue = 'btc';
+  String ethValue = 'eth';
+  String ltcValue = 'ltc';
+  CoinData data = CoinData();
+
+  void initState() {
+    super.initState();
+    updateUI();
+  }
+
+  void updateUI() async {
+    var btcInfo = await data.getCurrentValue('btc', selectedCurrency);
+    var ethInfo = await data.getCurrentValue('eth', selectedCurrency);
+    var ltcInfo = await data.getCurrentValue('ltc', selectedCurrency);
+
+    setState(() {
+      btcValue = btcInfo['last'].round().toString();
+      ethValue = ethInfo['last'].round().toString();
+      ltcValue = ltcInfo['last'].round().toString();
+    });
+  }
+
+  List<Card> listOfCrypto() {
+    List<Card> allCryptos = [];
+
+    String rightValue = '?';
+    int iteration = 0;
+
+    for (String crypto in cryptoList) {
+      if (iteration == 0) {
+        rightValue = btcValue;
+      } else if (iteration == 1) {
+        rightValue = ethValue;
+      } else {
+        rightValue = ltcValue;
+      }
+      var newItem = Card(
+        color: Colors.lightBlueAccent,
+        elevation: 5.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+          child: Text(
+            '1 $crypto = $rightValue $selectedCurrency',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+      iteration++;
+      allCryptos.add(newItem);
+    }
+
+    return allCryptos;
+  }
 
   DropdownButton<String> androidDropdown() {
     List<DropdownMenuItem<String>> dropdownItems = [];
@@ -30,6 +90,7 @@ class _PriceScreenState extends State<PriceScreen> {
         setState(() {
           selectedCurrency = value;
         });
+        updateUI();
       },
     );
   }
@@ -47,6 +108,10 @@ class _PriceScreenState extends State<PriceScreen> {
       itemExtent: 32.0,
       onSelectedItemChanged: (selectedIndex) {
         print(selectedIndex);
+        setState(() {
+          selectedCurrency = selectedIndex.toString();
+        });
+        updateUI();
       },
       children: pickerItems,
     );
@@ -64,23 +129,9 @@ class _PriceScreenState extends State<PriceScreen> {
         children: <Widget>[
           Padding(
             padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = ? USD',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: listOfCrypto(),
             ),
           ),
           Container(
